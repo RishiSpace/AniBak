@@ -3,13 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rishi's Anime Backlog</title>
+    <title>Rishi's Content Backlog</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1 class="fade-in">Rishi's Anime Backlog</h1>
-        <p class="fade-in">What anime is in my backlog?</p>
+        <h1 class="fade-in">Rishi's Content Backlog</h1>
+
+        <!-- Theme Toggle Button -->
+        <button id="themeToggle" class="login-btn">🌙 / 🌞</button>
+
+        <!-- Login Button (Top Right) -->
+        <button id="loginBtn" class="login-btn">Login</button>
+
+        <!-- Login Form (Popup Modal) -->
+        <div id="loginModal" class="login-modal">
+            <div class="login-modal-content">
+                <span id="closeModal" class="close">&times;</span>
+                <h3>Login to Your Account</h3>
+                <input type="email" id="emailInput" placeholder="Email" class="input-box">
+                <input type="password" id="passwordInput" placeholder="Password" class="input-box">
+                <button id="submitLogin">Submit</button>
+                <p id="loginError" class="error hidden">Incorrect credentials, please try again.</p>
+            </div>
+        </div>
+
+        <p class="fade-in">What Series/Anime is in my backlog?</p>
         <form id="animeForm" class="fade-in">
             <input type="text" id="animeInput" placeholder="Enter anime name" class="input-box" required>
             <button type="submit">Add to Backlog</button>
@@ -20,14 +39,16 @@
             <tr>
                 <th>ID</th>
                 <th>Anime Name</th>
+                <th>Actions</th>
             </tr>
         </table>
     </div>
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
+    <script type="module">
+        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getDatabase, ref, get, push, set, update, remove } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+    
         // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCHaosG3iAmABaLPdtZpxk2thX8nmMEwCs",
@@ -38,49 +59,206 @@
             messagingSenderId: "861960351657",
             appId: "1:861960351657:web:542c44d798a7b466a89eb8"
         };
-
+    
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        const db = getDatabase(app);
+    
+        // Fetch login credentials from Firebase
+        const loginRef = ref(db, 'users/creds');
+        let correctEmail = "";
+        let correctPassword = "";
+    
+        // Get credentials and set them
+        get(loginRef).then((snapshot) => {
+            if (snapshot.exists()) {
+                correctEmail = snapshot.val().email;
+                correctPassword = snapshot.val().password;
+            } else {
+                console.log("No login credentials found.");
+            }
+        }).catch((error) => {
+            console.error("Error fetching credentials:", error);
+        });
+    
+        // Login logic remains the same as before
+        const loginBtn = document.getElementById('loginBtn');
+        const loginModal = document.getElementById('loginModal');
+        const closeModal = document.getElementById('closeModal');
+        const submitLogin = document.getElementById('submitLogin');
+        const emailInput = document.getElementById('emailInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginError = document.getElementById('loginError');
+    
+        let isLoggedIn = false;
+    
+        // Show login modal
+        loginBtn.addEventListener('click', () => {
+            loginModal.style.display = "block";
+        });
+    
+        // Close login modal
+        closeModal.addEventListener('click', () => {
+            loginModal.style.display = "none";
+        });
+    
+        // Close login modal when clicked outside
+        window.addEventListener('click', (event) => {
+            if (event.target === loginModal) {
+                loginModal.style.display = "none";
+            }
+        });
+    
+        // Handle login submission
+        submitLogin.addEventListener('click', () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+    
+            if (email === correctEmail && password === correctPassword) {
+                alert("Login Successful!");
+                loginModal.style.display = "none";
+                loginBtn.innerText = "Logout";
+                isLoggedIn = true;
+                renderTable();  // Render table with edit/delete buttons
+            } else {
+                loginError.classList.remove('hidden');
+            }
+        });
 
-        // Reference to the 'backlog' data in Firebase
-        const animeRef = ref(database, 'backlog/');
+        // Check system theme preference and set initial mode
+        const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (prefersDarkScheme) {
+            document.body.classList.add('dark-mode');
+            document.body.classList.remove('light-mode');
+        } else {
+            document.body.classList.add('light-mode');
+            document.body.classList.remove('dark-mode');
+        }
 
-        // Function to add anime to the backlog
-        document.getElementById('animeForm').addEventListener('submit', function(event) {
+        // Toggle between light and dark modes
+        themeToggle.addEventListener('click', () => {
+            if (document.body.classList.contains('light-mode')) {
+                document.body.classList.remove('light-mode');
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+            }
+        });
+
+        // Show login modal when login button is clicked
+        loginBtn.addEventListener('click', () => {
+            loginModal.style.display = "block";
+        });
+
+        // Close the login modal when close button is clicked
+        closeModal.addEventListener('click', () => {
+            loginModal.style.display = "none";
+        });
+
+        // Close the modal when clicked outside the modal
+        window.addEventListener('click', (event) => {
+            if (event.target === loginModal) {
+                loginModal.style.display = "none";
+            }
+        });
+
+        // Handle login submission
+        submitLogin.addEventListener('click', () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            if (email === correctEmail && password === correctPassword) {
+                alert("Login Successful!");
+                loginModal.style.display = "none";
+                loginBtn.innerText = "Logout"; 
+                isLoggedIn = true;
+                renderTable(); 
+            } else {
+                loginError.classList.remove('hidden');
+            }
+        });
+
+        // Render the table with or without edit/delete buttons
+        function renderTable() {
+            const table = document.getElementById("animeTable");
+            table.innerHTML = `
+                <tr>
+                    <th>ID</th>
+                    <th>Anime Name</th>
+                    <th>Actions</th>
+                </tr>`;
+
+            const animeRef = ref(db, 'backlog');
+            get(animeRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const entries = snapshot.val();
+                    Object.keys(entries).forEach((key, index) => {
+                        const row = table.insertRow();
+                        const idCell = row.insertCell(0);
+                        const nameCell = row.insertCell(1);
+                        const actionsCell = row.insertCell(2);
+
+                        idCell.innerText = index + 1;
+                        nameCell.innerText = entries[key].name;
+
+                        if (isLoggedIn) {
+                            const editButton = document.createElement('button');
+                            editButton.innerText = "Edit";
+                            editButton.onclick = () => editAnime(key);
+
+                            const deleteButton = document.createElement('button');
+                            deleteButton.innerText = "Delete";
+                            deleteButton.onclick = () => deleteAnime(key);
+
+                            actionsCell.appendChild(editButton);
+                            actionsCell.appendChild(deleteButton);
+                        }
+                    });
+                } else {
+                    console.log("No data available");
+                }
+            }).catch((error) => {
+                console.error(error);
+            });
+        }
+
+        // Add anime to the database
+        const animeForm = document.getElementById('animeForm');
+        animeForm.addEventListener('submit', (event) => {
             event.preventDefault();
-
-            const animeInput = document.getElementById('animeInput').value;
-            if (animeInput) {
-                // Push new anime data to Firebase Realtime Database
+            const animeName = document.getElementById("animeInput").value;
+            if (animeName.trim()) {
+                const animeRef = ref(db, 'backlog');
                 const newAnimeRef = push(animeRef);
-                set(newAnimeRef, {
-                    name: animeInput
-                });
-
-                document.getElementById('animeInput').value = '';  // Clear input field
-            }
-        });
-
-        // Function to load anime list from Firebase
-        onValue(animeRef, (snapshot) => {
-            const data = snapshot.val();
-            const animeTable = document.getElementById('animeTable');
-            
-            // Clear current table content
-            animeTable.innerHTML = `<tr><th>ID</th><th>Anime Name</th></tr>`;
-
-            if (data) {
-                Object.keys(data).forEach(key => {
-                    const row = animeTable.insertRow();
-                    const cell1 = row.insertCell(0);
-                    const cell2 = row.insertCell(1);
-                    cell1.textContent = key;
-                    cell2.textContent = data[key].name;
+                set(newAnimeRef, { name: animeName }).then(() => {
+                    renderTable();
                 });
             }
         });
+
+        // Edit anime entry
+        function editAnime(key) {
+            const newName = prompt("Edit anime name:");
+            if (newName) {
+                const animeRef = ref(db, 'backlog/' + key);
+                update(animeRef, { name: newName }).then(() => {
+                    renderTable();
+                });
+            }
+        }
+
+        // Delete anime entry
+        function deleteAnime(key) {
+            const animeRef = ref(db, 'backlog/' + key);
+            remove(animeRef).then(() => {
+                renderTable();
+            });
+        }
+
+        // Initial table render
+        renderTable();
+
     </script>
-    <script src="script.js"></script>
 </body>
 </html>
