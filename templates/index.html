@@ -4,31 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rishi's Anime Backlog</title>
-    <link rel="stylesheet" href="../static/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <h1 class="fade-in">Rishi's Anime Backlog</h1>
         <p class="fade-in">What anime is in my backlog?</p>
-        <form action="/add" method="POST" class="fade-in">
-            <input type="text" name="anime_name" placeholder="Enter anime name" class="input-box" required>
+        <form id="animeForm" class="fade-in">
+            <input type="text" id="animeInput" placeholder="Enter anime name" class="input-box" required>
             <button type="submit">Add to Backlog</button>
         </form>
 
         <h2 class="fade-in">Already in backlog</h2>
-        <table class="fade-in">
+        <table id="animeTable" class="fade-in">
             <tr>
                 <th>ID</th>
                 <th>Anime Name</th>
             </tr>
-            {% for anime in backlog %}
-            <tr>
-                <td>{{ anime[0] }}</td>
-                <td>{{ anime[1] }}</td>
-            </tr>
-            {% endfor %}
         </table>
     </div>
-    <script src="../static/script.js"></script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHaosG3iAmABaLPdtZpxk2thX8nmMEwCs",
+            authDomain: "anime-back.firebaseapp.com",
+            databaseURL: "https://anime-back-default-rtdb.firebaseio.com",
+            projectId: "anime-back",
+            storageBucket: "anime-back.firebasestorage.app",
+            messagingSenderId: "861960351657",
+            appId: "1:861960351657:web:542c44d798a7b466a89eb8"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Reference to the 'backlog' data in Firebase
+        const animeRef = ref(database, 'backlog/');
+
+        // Function to add anime to the backlog
+        document.getElementById('animeForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const animeInput = document.getElementById('animeInput').value;
+            if (animeInput) {
+                // Push new anime data to Firebase Realtime Database
+                const newAnimeRef = push(animeRef);
+                set(newAnimeRef, {
+                    name: animeInput
+                });
+
+                document.getElementById('animeInput').value = '';  // Clear input field
+            }
+        });
+
+        // Function to load anime list from Firebase
+        onValue(animeRef, (snapshot) => {
+            const data = snapshot.val();
+            const animeTable = document.getElementById('animeTable');
+            
+            // Clear current table content
+            animeTable.innerHTML = `<tr><th>ID</th><th>Anime Name</th></tr>`;
+
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    const row = animeTable.insertRow();
+                    const cell1 = row.insertCell(0);
+                    const cell2 = row.insertCell(1);
+                    cell1.textContent = key;
+                    cell2.textContent = data[key].name;
+                });
+            }
+        });
+    </script>
+    <script src="script.js"></script>
 </body>
 </html>
