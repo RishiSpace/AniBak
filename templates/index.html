@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rishi's Anime Backlog</title>
+    <link rel="stylesheet" href="../static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="fade-in">Rishi's Anime Backlog</h1>
+        <p class="fade-in">What anime is in my backlog?</p>
+        <form action="/add" method="POST" class="fade-in">
+            <input type="text" name="anime_name" placeholder="Enter anime name" class="input-box" required>
+            <button type="submit">Add to Backlog</button>
+        </form>
+
+        <h2 class="fade-in">Already in backlog</h2>
+        <table class="fade-in">
+            <tr>
+                <th>ID</th>
+                <th>Anime Name</th>
+            </tr>
+            {% for anime in backlog %}
+            <tr>
+                <td>{{ anime[0] }}</td>
+                <td>{{ anime[1] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <script src="../static/script.js"></script>
+</body>
+</html>
